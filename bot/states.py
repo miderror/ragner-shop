@@ -10,3 +10,4 @@ class OrderState(StatesGroup):
 
 class TopUpState(StatesGroup):
     amount = State()
+    ruble_amount = State()

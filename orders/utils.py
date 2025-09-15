@@ -15,7 +15,7 @@ logger = logging.getLogger()
 
 async def delete_old_topups():
     lifetime = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_LIFETIME)()
-    target_date = timezone.now() - timedelta(hours=lifetime)
+    target_date = timezone.now() - timedelta(minutes=lifetime)
     logger.info(f'Deleting unpayed topups before {target_date}')
     await TopUp.objects.filter(created_at__lt=target_date, is_paid=False, is_topped=False).adelete()
 

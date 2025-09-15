@@ -98,9 +98,7 @@ class CreateOrderSerializer(serializers.Serializer):
         if manual_category:
             if not data.get("pubg_id"):
                 raise serializers.ValidationError(
-                    {
-                        "pubg_id": f"This field is required for '{item.title}'. Prompt: '{manual_category.prompt_text}'"
-                    }
+                    {"pubg_id": f"This field is required for '{item.title}'. Prompt: '{manual_category.prompt_text}'"}
                 )
 
         elif category in (

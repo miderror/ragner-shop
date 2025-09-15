@@ -103,4 +103,3 @@ def mock_get_bybit_updates():
     """Мок для получения депозитов с ByBit."""
     logger.warning("[MOCK] BYBIT: Проверка 'депозитов'")
     return [("25.456", "mock_tx_bybit_67890")]
-

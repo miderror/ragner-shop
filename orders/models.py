@@ -305,6 +305,11 @@ class Order(models.Model):
 
 
 class TopUp(models.Model):
+
+    class Currency(models.TextChoices):
+        USDT = 'USDT', 'USDT'
+        RUB = 'RUB', 'RUB'
+
     tg_user = models.ForeignKey(
         TgUser, on_delete=models.CASCADE, verbose_name="TG USER"
     )
@@ -312,7 +317,7 @@ class TopUp(models.Model):
         max_digits=10, decimal_places=3, verbose_name="Amount to topup"
     )
     comission = models.DecimalField(
-        blank=True, max_digits=4, decimal_places=3, verbose_name="Comission"
+        blank=True, max_digits=10, decimal_places=3, verbose_name="Comission"
     )
     to_pay = models.DecimalField(
         blank=True, max_digits=10, decimal_places=3, verbose_name="Total to pay"
@@ -323,6 +328,8 @@ class TopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creation date")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updation date")
     paid_at = models.DateTimeField(blank=True, null=True, verbose_name="Paid at")
+    payment_url = models.URLField(blank=True, null=True, verbose_name='Payment URL')
+    currency = models.CharField(max_length=10, choices=Currency, default=Currency.USDT, verbose_name='Currency')
 
     class Meta:
         verbose_name = "TopUp"
@@ -347,10 +354,23 @@ class TopUp(models.Model):
         self.comission = comission
         self.to_pay = to_pay
 
+    def convert_to_ustd(self) -> Decimal | None:
+        if self.currency == self.Currency.RUB:
+            return (
+                Decimal(str(self.amount)) / Decimal(str(PAYMENT_CONFIG.RUB_USDT_EXCHANGE_RATE))
+            ).quantize(Decimal('0.01'))
+        if self.currency == self.Currency.USDT:
+            return self.amount
+        return None
+
     def top(self):
         if self.is_topped:
             return
-        self.tg_user.process_payment(self.amount)
+        if self.currency == self.Currency.RUB:
+            amount = self.convert_to_ustd()
+        elif self.currency == self.Currency.USDT:
+            amount = self.amount
+        self.tg_user.process_payment(amount)
         self.is_topped = True
         self.save(update_fields=("is_topped",))
 

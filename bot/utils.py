@@ -10,6 +10,7 @@ from django.utils import timezone
 from backend.settings import ENV
 from codes.models import StockbleCode
 from users.models import TgUser
+from backend.config import PAYMENT_CONFIG
 
 logger = logging.getLogger(__name__)
 
@@ -102,3 +103,20 @@ async def asend_text_or_txt(bot, chat_id, text, order: Union["Order", None] = No
         )
         return
     await bot.send_message(chat_id, text=text)
+
+
+async def validated_payment_amount(amount: str, currency: str):
+    try:
+        amount = int(amount)
+    except ValueError:
+        raise ValueError("Can't understand amount. Please try again.")
+    if currency == 'RUB':
+        ruble_comission = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_COMISSION)()
+        comission = amount * (ruble_comission / 100)
+        TOPUP_RUBLE_MIN = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_MIN)()
+        TOPUP_RUBLE_MAX = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_MAX)()
+        if not TOPUP_RUBLE_MIN < amount - comission < TOPUP_RUBLE_MAX:
+            raise ValueError(
+                f"Amount should be from {PAYMENT_CONFIG.TOPUP_RUBLE_MIN} to {PAYMENT_CONFIG.TOPUP_RUBLE_MAX}"
+            )
+    return amount

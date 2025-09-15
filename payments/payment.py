@@ -1,11 +1,20 @@
 import logging
 from time import time
 
+import aiohttp
 from binance.spot import Spot
 from pybit.unified_trading import HTTP
 
+from backend.config import PAYMENT_CONFIG
 from backend.settings import ENV
 from orders.models import TopUp
+from users.models import TgUser
+from asgiref.sync import sync_to_async
+
+CODEEPAY_API_KEY = ENV.str('CODEEPAY_API_KEY')
+BASE_IP = ENV.str('BASE_IP')
+
+MIN_PRICE = 100
 
 
 logger = logging.getLogger(__name__)
@@ -69,3 +78,42 @@ async def check_wallets():
             topup.tx_id = txId
             await topup.atop()
             await topup.asave(update_fields=('is_paid', 'tx_id'))
+
+
+async def create_codeepay_payment(tg_user: TgUser, to_pay: int):
+    url = 'https://codeepay.ru/initiate_payment'
+    ruble_comission = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_COMISSION)()
+    comission = to_pay * (ruble_comission / 100)
+    amount = to_pay - comission
+    if to_pay < MIN_PRICE:
+        raise ValueError(f'Нельзя оплатить меньше {MIN_PRICE}. Ваша цена {amount}')
+    topup = await TopUp.objects.acreate(
+        tg_user=tg_user,
+        amount=amount,
+        comission=comission,
+        to_pay=to_pay,
+        currency=TopUp.Currency.RUB,
+    )
+    callback_url = f'{BASE_IP}/webhook/codeepay/'
+    headers = {
+        'Content-Type': 'application/json',
+        'X-Api-Key': CODEEPAY_API_KEY
+    }
+    data = {
+        'method_slug': 'sbp',
+        'amount': topup.to_pay,
+        'description': f'Оплата {topup} {tg_user}',
+        'metadata': {
+            'order_id': topup.id,
+            'notification_url': callback_url
+        }
+    }
+    logging.info(f'Запрос платежа {data}')
+    async with aiohttp.ClientSession() as session:
+        async with session.post(url=url, headers=headers, json=data) as response:
+            if response.status not in (200, 201):
+                logging.error(f'Ошибка codeepay {response.status}: {await response.text()}')
+            res = await response.json()
+    topup.payment_url = res.get('url')
+    await topup.asave(update_fields=['payment_url'])
+    return topup

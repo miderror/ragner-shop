@@ -13,8 +13,10 @@ import bot.keyboards as kb
 from backend.config import FEATURES_CONFIG, PAYMENT_CONFIG
 from bot.callbacks import ApiCD, HistoryCD, MenuCD, ProfileCD
 from bot.states import TopUpState
+from bot.utils import validated_payment_amount
 from orders.models import Order, TopUp
 from users.models import TgUser
+from payments.payment import create_codeepay_payment
 
 ENV = settings.ENV
 
@@ -69,7 +71,7 @@ async def get_history_slice(
 
 
 @router.callback_query(
-    ProfileCD.filter((F.category == ProfileCD.Category.POINTS) & (F.action == None))
+    ProfileCD.filter((F.category == ProfileCD.Category.POINTS) & (F.action == None))  # NOQA
 )  # NOQA
 async def get_points(query: CallbackQuery, callback_data: MenuCD, state: FSMContext):
     if not await sync_to_async(lambda: FEATURES_CONFIG.POINTS_SYSTEM_ENABLED, thread_sensitive=True)():
@@ -84,7 +86,7 @@ async def get_points(query: CallbackQuery, callback_data: MenuCD, state: FSMCont
 
 
 @router.callback_query(
-    ProfileCD.filter((F.category == ProfileCD.Category.BALANCE) & (F.action == None))
+    ProfileCD.filter((F.category == ProfileCD.Category.BALANCE) & (F.action == None))  # NOQA
 )  # NOQA
 async def get_balance(query: CallbackQuery, callback_data: MenuCD, state: FSMContext):
     tg_user = await TgUser.objects.aget(tg_id=query.from_user.id)
@@ -122,7 +124,7 @@ async def gen_topup(message: Message, state: FSMContext):
     text = (
         f"Please topup exactly that amount: {topup.to_pay}\n"
         f"{await sync_to_async(lambda: PAYMENT_CONFIG.PAYMENT_TEXT)()}\n"
-        f"<b>Valid for {await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_LIFETIME)()} hours</b>"
+        f"<b>Valid for {await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_LIFETIME)()} minutes</b>"
     )
     await message.answer(text, parse_mode="HTML")
     await state.clear()
@@ -193,3 +195,40 @@ async def regenerate_api_key(query: CallbackQuery, state: FSMContext):
         disable_web_page_preview=True,
     )
     await query.answer("New API Key generated!")
+
+
+@router.callback_query(ProfileCD.filter(F.action == "topup_ruble"))
+async def ask_topup_ruble_amount(
+    query: CallbackQuery, callback_data: MenuCD, state: FSMContext
+):
+    await state.set_state(TopUpState.ruble_amount)
+    await query.message.edit_text(
+        f"Comission: {await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_COMISSION)()}%\n"
+        f"Exchange rate: {await sync_to_async(lambda: PAYMENT_CONFIG.RUB_USDT_EXCHANGE_RATE)()}\n\n"
+        "Write amount to topup in RUB")
+
+
+@router.message(TopUpState.ruble_amount)
+async def gen_rub_topup(message: Message, state: FSMContext):
+    tg_user = await TgUser.objects.aget(tg_id=message.from_user.id)
+    try:
+        amount = await validated_payment_amount(message.text, 'RUB')
+    except ValueError as e:
+        await message.answer(f"{e}")
+        return
+    topup = await create_codeepay_payment(tg_user, amount)
+    TOPUP_RUBLE_COMISSION = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_COMISSION)()
+    RUB_USDT_EXCHANGE_RATE = await sync_to_async(lambda: PAYMENT_CONFIG.RUB_USDT_EXCHANGE_RATE)()
+    TOPUP_LIFETIME = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_LIFETIME)()
+    text = (
+        '💰 <b>Сведения по оплате</b>\n'
+        f'• <b>Сумма к оплате:</b> {topup.to_pay} ₽\n'
+        f'• <b>Доступно для обмена:</b> {topup.amount} ₽ (включена комиссия {TOPUP_RUBLE_COMISSION}%)\n'
+        f'• <b>Курс обмена:</b> 1 USDT = {RUB_USDT_EXCHANGE_RATE} ₽\n'
+        f'🗳 <b>Вы получите: {topup.convert_to_ustd()} USDT</b>\n\n'
+
+        f'🔗 <b>Для оплаты перейдите по ссылке:</b> {topup.payment_url}\n\n'
+
+        f'⏳ <i>Ссылка действует {TOPUP_LIFETIME} минут.</i>'
+    )
+    await message.answer(text, parse_mode='HTML')

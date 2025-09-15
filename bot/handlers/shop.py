@@ -91,7 +91,7 @@ async def get_codes_items(
     )
 
 
-@router.callback_query(FolderCD.filter(F.category != None))
+@router.callback_query(FolderCD.filter(F.category != None))  # NOQA
 async def get_folder_items(
     query: CallbackQuery, callback_data: FolderCD, state: FSMContext
 ):
@@ -284,7 +284,7 @@ async def get_user_id(message: Message, state: FSMContext):
     text = await sync_to_async(lambda: TEXT_CONFIG.WRONG_PUBGID_MSG)()
     try:
         user_id, zone_id = get_user_zone_id(message.text)
-    except:
+    except Exception:
         await message.answer(text)
         return
     if not user_id.isdigit() or not zone_id.isdigit():

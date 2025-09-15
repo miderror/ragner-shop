@@ -131,7 +131,7 @@ class Command(BaseCommand):
             raise CommandError(
                 'No ManagerChat found. Please run "python manage.py mockchats" first.'
             )
-        
+
         self.stdout.write("Creating mock folders...")
         mock_folders()
 

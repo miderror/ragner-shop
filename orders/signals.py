@@ -63,5 +63,10 @@ def topup_pre_save(sender, instance: TopUp, **kwargs):
     if old:
         old.refresh_from_db()
         if not old.is_topped and instance.is_topped:
-            text = 'Your account has been successfully topped up'
+            if instance.currency == TopUp.Currency.USDT:
+                text = 'Your account has been successfully topped up'
+            elif instance.currency == TopUp.Currency.RUB:
+                text = (
+                    f'{instance.amount} {instance.currency} Payment Received successfully\n'
+                    f'{instance.convert_to_ustd()}$ have been added to your account')
             send_notification_task.delay(instance.tg_user.tg_id, text=text)

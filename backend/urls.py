@@ -11,7 +11,7 @@ from codes.views import (
     import_giftcards_view,
     import_stockblecode_view,
 )
-from payments.views import webhook_fars
+from payments.views import webhook_fars, codeepay_webhook
 
 api_v1_patterns = [
     path("api/v1/", include("api.urls")),
@@ -24,6 +24,7 @@ urlpatterns = [
     path("import/giftcards/", import_giftcards_view, name="import_giftcards"),
     path("import/stockblecode/", import_stockblecode_view, name="import_stockblecode"),
     path("webhook/fars/", webhook_fars, name="webhook_fars"),
+    path("webhook/codeepay/", codeepay_webhook, name="webhook_codeepay"),
     path("", include(api_v1_patterns)),
     path(
         "api/v1/schema/",

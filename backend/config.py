@@ -83,6 +83,10 @@ class BUTT_CONFIG(BaseConfig):
     TOPUP_DESCRIPTION = "TOPUP button text"
     TOPUP_TAGS = [ConfigTags.text]
 
+    TOPUP_RUBLE: str = "TOPUP RUBLE"
+    TOPUP_RUBLE_DESCRIPTION = "TOPUP RUBLE button text"
+    TOPUP_RUBLE_TAGS = [ConfigTags.text]
+
 
 class PAYMENT_CONFIG(BaseConfig):
     __topic__ = "Payment configuration"
@@ -91,8 +95,8 @@ class PAYMENT_CONFIG(BaseConfig):
     TOPUP_COMISSION_DESCRIPTION = "Min topup comission (max 3 digits after point)"
     TOPUP_COMISSION_TAGS = [ConfigTags.payment]
 
-    TOPUP_LIFETIME: int = 24
-    TOPUP_LIFETIME_DESCRIPTION = "Topup lifetime in hours"
+    TOPUP_LIFETIME: int = 20
+    TOPUP_LIFETIME_DESCRIPTION = "Topup lifetime in minutes"
     TOPUP_LIFETIME_TAGS = [ConfigTags.payment]
 
     PAYMENT_TEXT: str = (
@@ -105,6 +109,22 @@ class PAYMENT_CONFIG(BaseConfig):
     PAYMENT_TEXT_DESCRIPTION = "Text with payment credentials"
     PAYMENT_TEXT_TAGS = [ConfigTags.payment]
     PAYMENT_TEXT_VALIDATORS = [validate_telegram_html]
+
+    TOPUP_RUBLE_COMISSION: float = 1.000
+    TOPUP_RUBLE_COMISSION_DESCRIPTION = "Ruble topup comission in % (max 3 digits after point)"
+    TOPUP_RUBLE_COMISSION_TAGS = [ConfigTags.payment]
+
+    RUB_USDT_EXCHANGE_RATE: float = 84.63
+    RUB_USDT_EXCHANGE_RATE_DESCRIPTION = "Ruble topup comission in % (max 3 digits after point)"
+    RUB_USDT_EXCHANGE_RATE_TAGS = [ConfigTags.payment]
+
+    TOPUP_RUBLE_MIN: int = 50
+    TOPUP_RUBLE_MIN_DESCRIPTION = "Ruble topup min sum"
+    TOPUP_RUBLE_MIN_TAGS = [ConfigTags.payment]
+
+    TOPUP_RUBLE_MAX: int = 85_000
+    TOPUP_RUBLE_MAX_DESCRIPTION = "Ruble topup max sum"
+    TOPUP_RUBLE_MAX_TAGS = [ConfigTags.payment]
 
 
 class FEATURES_CONFIG(BaseConfig):

@@ -7,8 +7,8 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 ENV = Env()
 
+ENV.read_env(Path(BASE_DIR, '.env'))
 SECRET_KEY = ENV.str("SECRET_KEY")
-
 DEBUG = ENV.bool("DEBUG", default=False)
 
 ALLOWED_HOSTS = ENV.list("ALLOWED_HOSTS", default=["127.0.0.1", "localhost"])
@@ -108,7 +108,7 @@ REST_FRAMEWORK = {
 
 SPECTACULAR_SETTINGS = {
     "TITLE": "Ragner Shop Public API",
-    "DESCRIPTION": "Welcome to the Ragner Shop Public API documentation. This guide provides details about the API, authentication methods, request/response formats, and error handling.",
+    "DESCRIPTION": "Welcome to the Ragner Shop Public API documentation. This guide provides details about the API, authentication methods, request/response formats, and error handling.",  # NOQA
     "VERSION": "1.0.0",
     "SERVE_INCLUDE_SCHEMA": False,
     "AUTHENTICATION_EXTENSIONS": {

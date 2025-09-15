@@ -147,6 +147,10 @@ async def get_balance_inline():
         callback_data=ProfileCD(category=ProfileCD.Category.BALANCE, action="topup"),
     )
     markup.button(
+        text=await sync_to_async(lambda: BUTT_CONFIG.TOPUP_RUBLE)(),
+        callback_data=ProfileCD(category=ProfileCD.Category.BALANCE, action="topup_ruble"),
+    )
+    markup.button(
         text=await sync_to_async(lambda: BUTT_CONFIG.BACK)(),
         callback_data=MenuCD(category=MenuCD.Category.profile),
     )
