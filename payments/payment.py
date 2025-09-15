@@ -85,8 +85,6 @@ async def create_codeepay_payment(tg_user: TgUser, to_pay: int):
     ruble_comission = await sync_to_async(lambda: PAYMENT_CONFIG.TOPUP_RUBLE_COMISSION)()
     comission = to_pay * (ruble_comission / 100)
     amount = to_pay - comission
-    if to_pay < MIN_PRICE:
-        raise ValueError(f'Нельзя оплатить меньше {MIN_PRICE}. Ваша цена {amount}')
     topup = await TopUp.objects.acreate(
         tg_user=tg_user,
         amount=amount,
