@@ -31,8 +31,10 @@ class PUBGUCItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "amount",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = (
         "category",
         "data",
@@ -50,15 +52,16 @@ class StockCodesItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "amount",
-        "is_active",
         "folder",
+        "serial_number",
+        "is_active",
     )
     readonly_fields = ("category",)
     exclude = (
         "activator",
         "data",
     )
-    list_editable = ("folder",)
+    list_editable = ("folder", "price", "serial_number", "is_active")
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(category=Item.Category.CODES)
@@ -76,6 +79,7 @@ class GiftcardItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "folder",
+        "serial_number",
         "is_active",
     )
     readonly_fields = ("category",)
@@ -84,7 +88,7 @@ class GiftcardItemAdmin(admin.ModelAdmin):
         "activator",
         "data",
     )
-    list_editable = ("folder",)
+    list_editable = ("folder", "price", "serial_number", "is_active")
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(category=Item.Category.GIFTCARD)
@@ -101,8 +105,10 @@ class PopularityItemAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = ("category",)
     exclude = ("amount", "activator", "data", "manual_category", "folder")
 
@@ -120,8 +126,10 @@ class HomeVoteItemAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = ("category",)
     exclude = ("amount", "activator", "data", "manual_category", "folder")
 
@@ -138,8 +146,10 @@ class OffersItemAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "price",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = ("category",)
     exclude = ("amount", "activator", "data", "manual_category", "folder")
 
@@ -158,8 +168,10 @@ class StarItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "amount",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = ("category",)
     exclude = (
         "amount",
@@ -177,8 +189,10 @@ class DiamondAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "serial_number",
         "is_active",
     )
+    list_editable = ("price", "serial_number", "is_active")
     readonly_fields = (
         "category",
         "data",
@@ -198,10 +212,11 @@ class MorePubgItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "folder",
+        "serial_number",
         "is_active",
     )
     list_filter = ("folder", "is_active")
-    list_editable = ("folder",)
+    list_editable = ("folder", "price", "serial_number", "is_active")
     exclude = ("amount", "activator", "data", "manual_category")
     readonly_fields = ("category",)
 
@@ -227,6 +242,7 @@ class MorePubgItemAdmin(admin.ModelAdmin):
 class FolderAdmin(admin.ModelAdmin):
     list_display = (
         "title",
+        "description",
         "ordering_id",
         "category",
     )
@@ -255,7 +271,19 @@ class ManualCategoryAdmin(admin.ModelAdmin):
 
 @admin.register(ManualItem)
 class ManualItemAdmin(admin.ModelAdmin):
-    list_display = ("title", "price", "manual_category", "is_active")
+    list_display = (
+        "title",
+        "price",
+        "manual_category",
+        "serial_number",
+        "is_active",
+    )
+    list_editable = (
+        "price",
+        "manual_category",
+        "serial_number",
+        "is_active",
+    )
     list_filter = ("manual_category", "is_active")
     readonly_fields = ("category",)
     exclude = ("amount", "activator", "data", "folder")

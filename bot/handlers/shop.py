@@ -107,7 +107,10 @@ async def get_folder_items(
         back_callback = MenuCD(category=MenuCD.Category.stock_codes)
         description_key = MenuCD.Category.stock_codes
 
-    text = await get_shop_text("Choose item", category_key=description_key)
+    if folder.description:
+        text = f"{folder.description}\n\nChoose item"
+    else:
+        text = await get_shop_text("Choose item", category_key=description_key)
 
     await query.message.edit_text(
         text=text,

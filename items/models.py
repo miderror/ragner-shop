@@ -96,9 +96,15 @@ class Item(models.Model):
         related_name="items",
         verbose_name="Folder",
     )
+    serial_number = models.PositiveIntegerField(
+        default=100,
+        verbose_name="Serial Number",
+        help_text="Used for sorting items in the bot. Lower number comes first.",
+    )
 
     class Meta:
         ordering = [
+            "serial_number",
             "price",
             "title",
         ]
@@ -389,6 +395,11 @@ class Folder(models.Model):
     title = models.CharField(max_length=35, verbose_name="Title")
     ordering_id = models.SmallIntegerField(
         blank=True, null=True, verbose_name="Ordering num"
+    )
+    description = models.TextField(
+        blank=True,
+        verbose_name="Custom Description",
+        help_text="Optional. If set, this will be shown inside this folder in the bot."
     )
 
     def aitems(self, **kwargs):
