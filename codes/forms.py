@@ -18,6 +18,11 @@ class ImportForm(forms.Form):
         label="Priority Use",
         help_text="Check this to mark these codes for priority use.",
     )
+    price_of_codes = forms.DecimalField(
+        label="Price of codes (per one)",
+        required=False,
+        help_text="Set the buying cost for each imported code.",
+    )
     codes = forms.CharField(
         min_length=1,
         max_length=100_000 * 20,
@@ -44,7 +49,11 @@ class GiftCardImportForm(forms.Form):
         widget=forms.Select,
         help_text="Select a giftcard item",
     )
-
+    price_of_codes = forms.DecimalField(
+        label="Price of codes (per one)",
+        required=False,
+        help_text="Set the buying cost for each imported code.",
+    )
     codes = forms.CharField(
         min_length=1,
         max_length=100_000 * 20,
@@ -62,7 +71,11 @@ class StockbleCodeImportForm(forms.Form):
     amount = forms.ChoiceField(
         label="UC amount", choices=DEFAULT_SC_AMOUNTS, required=True
     )
-
+    price_of_codes = forms.DecimalField(
+        label="Price of codes (per one)",
+        required=False,
+        help_text="Set the buying cost for each imported code.",
+    )
     codes = forms.CharField(
         min_length=1,
         max_length=100_000 * 20,

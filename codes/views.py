@@ -22,8 +22,14 @@ def import_codes_view(request):
             codes = form.cleaned_data["codes"]
             amount = form.cleaned_data["amount"]
             is_priority_use = form.cleaned_data["is_priority_use"]
+            buying_cost = form.cleaned_data.get("price_of_codes")
             db_codes = [
-                UcCode(amount=amount, code=code, is_priority_use=is_priority_use)
+                UcCode(
+                    amount=amount,
+                    code=code,
+                    is_priority_use=is_priority_use,
+                    buying_cost=buying_cost,
+                )
                 for code in codes
             ]
             UcCode.objects.bulk_create(
@@ -43,8 +49,13 @@ def import_giftcards_view(request):
     if request.method == "POST":
         form = GiftCardImportForm(request.POST)
         if form.is_valid():
+            buying_cost = form.cleaned_data.get("price_of_codes")
             db_codes = [
-                Giftcard(item=form.cleaned_data["item"], code=code)
+                Giftcard(
+                    item=form.cleaned_data["item"],
+                    code=code,
+                    buying_cost=buying_cost,
+                )
                 for code in form.cleaned_data["codes"]
             ]
             Giftcard.objects.bulk_create(
@@ -66,7 +77,15 @@ def import_stockblecode_view(request):
         if form.is_valid():
             codes = form.cleaned_data["codes"]
             amount = form.cleaned_data["amount"]
-            db_codes = [StockbleCode(amount=amount, code=code) for code in codes]
+            buying_cost = form.cleaned_data.get("price_of_codes")
+            db_codes = [
+                StockbleCode(
+                    amount=amount,
+                    code=code,
+                    buying_cost=buying_cost,
+                )
+                for code in codes
+            ]
             StockbleCode.objects.bulk_create(
                 db_codes,
                 batch_size=1000,

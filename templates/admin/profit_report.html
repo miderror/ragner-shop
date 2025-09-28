@@ -1,0 +1,74 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+{{ block.super }}
+<style>
+    .profit-summary {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: var(--link-fg);
+        background: var(--darkened-bg);
+        padding: 15px;
+        margin-bottom: 20px;
+        border-radius: 4px;
+        text-align: center;
+    }
+    .date-filter {
+        margin-bottom: 20px;
+    }
+</style>
+{% endblock %}
+
+
+{% block content %}
+<div id="profit-report-content">
+
+    <h1>Profit Report</h1>
+
+    <div class="date-filter">
+        <form action="" method="get" style="display: flex; gap: 10px; align-items: center;">
+            <label for="start_date">From:</label>
+            <input type="date" id="start_date" name="start_date" value="{{ start_date_str }}">
+            <label for="end_date">To:</label>
+            <input type="date" id="end_date" name="end_date" value="{{ end_date_str }}">
+            <button type="submit">View Report</button>
+        </form>
+    </div>
+
+    <div class="profit-summary">
+        Total Net Profit for selected period: ${{ total_profit|floatformat:2 }}
+    </div>
+
+    <div class="report-section">
+        <h2>Completed Orders</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Buyer</th>
+                    <th>Product</th>
+                    <th>Selling Price</th>
+                    <th>Buying Cost</th>
+                    <th>Net Profit</th>
+                    <th>Date</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for order in orders_with_profit %}
+                    <tr>
+                        <td>{{ order.tg_user.username|default:"N/A" }} (ID: {{ order.tg_user.tg_id }})</td>
+                        <td>{{ order.item.value }} x {{ order.quantity }}</td>
+                        <td>${{ order.price|floatformat:2 }}</td>
+                        <td>${{ order.total_buying_cost|floatformat:2 }}</td>
+                        <td>${{ order.net_profit|floatformat:2 }}</td>
+                        <td>{{ order.created_at|date:"Y-m-d H:i" }}</td>
+                    </tr>
+                {% empty %}
+                    <tr><td colspan="6">No completed orders with profit data found for this period.</td></tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+
+</div>
+{% endblock %}

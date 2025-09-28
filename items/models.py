@@ -55,6 +55,14 @@ class Item(models.Model):
         blank=True, max_length=50, choices=Category, verbose_name="Category"
     )
     price = models.DecimalField(max_digits=10, decimal_places=3, verbose_name="Price")
+    buying_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        verbose_name="Buying Cost",
+        null=True,
+        blank=True,
+        help_text="The cost price of the item for profit calculation.",
+    )
     amount = models.IntegerField(
         blank=True,
         null=True,

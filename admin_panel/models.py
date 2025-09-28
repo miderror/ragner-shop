@@ -105,3 +105,10 @@ class DailyReport(ManagerChat):
         proxy = True
         verbose_name = "Daily Sales Report"
         verbose_name_plural = "Daily Sales Reports"
+
+
+class ProfitReport(ManagerChat):
+    class Meta:
+        proxy = True
+        verbose_name = "Profit Report"
+        verbose_name_plural = "Profit Reports"

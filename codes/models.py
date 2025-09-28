@@ -36,6 +36,14 @@ class ActivatorPriority(models.Model):
 
 class AbstractCode(models.Model):
     code = models.CharField(max_length=50, unique=True, verbose_name="Code")
+    buying_cost = models.DecimalField(
+        max_digits=10,
+        decimal_places=3,
+        verbose_name="Buying Cost",
+        null=True,
+        blank=True,
+        help_text="The cost price of this specific code.",
+    )
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creation date")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updation date")
 

@@ -48,6 +48,10 @@ class URL_CONFIG(BaseConfig):
     ADMIN_USERNAME_DESCRIPTION = "ADMIN_USERNAME for notifications"
     ADMIN_USERNAME_LINK_TAGS = [ConfigTags.urls]
 
+    REPORT_CHAT_ID: int = settings.ENV.int("REPORT_CHAT_ID", 0)
+    REPORT_CHAT_ID_DESCRIPTION = "Telegram Chat ID for sending daily summary reports"
+    REPORT_CHAT_ID_LINK_TAGS = [ConfigTags.other]
+
 
 class TEXT_CONFIG(BaseConfig):
     __topic__ = "Text configurations"

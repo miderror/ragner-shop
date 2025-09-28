@@ -31,6 +31,7 @@ class PUBGUCItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "amount",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -53,6 +54,7 @@ class StockCodesItemAdmin(admin.ModelAdmin):
         "price",
         "amount",
         "folder",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -79,6 +81,7 @@ class GiftcardItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "folder",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -105,6 +108,7 @@ class PopularityItemAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -126,6 +130,7 @@ class HomeVoteItemAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -146,6 +151,7 @@ class OffersItemAdmin(admin.ModelAdmin):
     list_display = (
         "title",
         "price",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -168,6 +174,7 @@ class StarItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "amount",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -189,6 +196,7 @@ class DiamondAdmin(admin.ModelAdmin):
         "value",
         "title",
         "price",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -212,6 +220,7 @@ class MorePubgItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "folder",
+        "buying_cost",
         "serial_number",
         "is_active",
     )
@@ -275,6 +284,7 @@ class ManualItemAdmin(admin.ModelAdmin):
         "title",
         "price",
         "manual_category",
+        "buying_cost",
         "serial_number",
         "is_active",
     )

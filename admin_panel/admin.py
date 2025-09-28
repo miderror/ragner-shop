@@ -1,7 +1,7 @@
 from datetime import datetime
 
 from django.contrib import admin
-from django.db.models import Count, Sum
+from django.db.models import Case, Count, DecimalField, F, Sum, When
 from django.forms import ModelForm
 from django.http import HttpRequest
 from django.template.response import TemplateResponse
@@ -11,7 +11,7 @@ from codes.models import Giftcard, StockbleCode, UcCode
 from items.models import Item
 from orders.models import Order
 
-from .models import Attachment, DailyReport, Mailing, ManagerChat
+from .models import Attachment, DailyReport, Mailing, ManagerChat, ProfitReport
 
 
 @admin.register(ManagerChat)
@@ -113,6 +113,83 @@ class DailyReportAdmin(admin.ModelAdmin):
             "giftcards_added_today": giftcards_added_today,
             "stockblecodes_added_today": stockblecodes_added_today,
             "title": "Daily Sales Report",
+        }
+        context.update(report_data)
+
+        return TemplateResponse(request, self.change_list_template, context)
+
+
+@admin.register(ProfitReport)
+class ProfitReportAdmin(admin.ModelAdmin):
+    change_list_template = "admin/profit_report.html"
+
+    def changelist_view(self, request, extra_context=None):
+        context = self.admin_site.each_context(request)
+
+        today = now().date()
+        start_date_str = request.GET.get("start_date", today.strftime("%Y-%m-%d"))
+        end_date_str = request.GET.get("end_date", today.strftime("%Y-%m-%d"))
+
+        try:
+            start_date = datetime.strptime(start_date_str, "%Y-%m-%d").date()
+            end_date = datetime.strptime(end_date_str, "%Y-%m-%d").date()
+        except ValueError:
+            start_date = today
+            end_date = today
+
+
+        code_based_buying_cost = Sum(
+            Case(
+                When(category=Item.Category.PUBG_UC, then=F("uc_codes__buying_cost")),
+                When(
+                    category=Item.Category.CODES, then=F("stockble_codes__buying_cost")
+                ),
+                When(
+                    category=Item.Category.GIFTCARD,
+                    then=F("giftcard_codes__buying_cost"),
+                ),
+                default=0,
+                output_field=DecimalField(),
+            )
+        )
+
+        manual_buying_cost = F("item__buying_cost") * F("quantity")
+
+        orders = (
+            Order.objects.filter(
+                created_at__date__range=[start_date, end_date],
+                is_completed=True,
+            )
+            .annotate(
+                total_buying_cost=Case(
+                    When(
+                        category__in=[
+                            Item.Category.PUBG_UC,
+                            Item.Category.CODES,
+                            Item.Category.GIFTCARD,
+                        ],
+                        then=code_based_buying_cost,
+                    ),
+                    default=manual_buying_cost,
+                    output_field=DecimalField(),
+                )
+            )
+            .filter(
+                total_buying_cost__isnull=False
+            )
+            .annotate(net_profit=F("price") - F("total_buying_cost"))
+            .select_related("tg_user", "item")
+            .order_by("-created_at")
+        )
+
+        total_profit = orders.aggregate(total=Sum("net_profit"))["total"] or 0
+
+        report_data = {
+            "title": "Profit Report",
+            "start_date_str": start_date_str,
+            "end_date_str": end_date_str,
+            "orders_with_profit": orders,
+            "total_profit": total_profit,
         }
         context.update(report_data)
 
