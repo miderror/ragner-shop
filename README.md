@@ -96,10 +96,3 @@ Commands are similar to development but use the `prod-` prefix, which correspond
     ```bash
     make prod-load-config
     ```
-
-
-## Локальный запуск Celery на Windows
-
-```bash
-celery -A backend worker --loglevel info --pool=solo
-```
