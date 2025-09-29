@@ -41,22 +41,22 @@ class Shop2TopUpClient:
         return response.get("offers", []) if response.get("success") else []
 
     async def get_player_info(self, player_id: str) -> Optional[Dict[str, str]]:
-        post_response = await self._request("post", "/id", json={"playerID": player_id})
-        if not post_response.get("success"):
-            logger.warning(
-                f"Failed to initiate player ID check for {player_id}: {post_response}"
-            )
-            return None
+        response = await self._request("post", "/id", json={"playerID": player_id})
 
-        await asyncio.sleep(2)
-
-        get_response = await self._request("get", f"/id?playerID={player_id}")
-        if get_response.get("success") and "player_name" in get_response:
+        if (
+            response.get("success")
+            and "player_name" in response
+            and "region" in response
+        ):
+            logger.info(f"Successfully received player info from POST /id: {response}")
             return {
-                "player_name": get_response["player_name"],
-                "region": get_response.get("region", "UNKNOWN"),
+                "player_name": response["player_name"],
+                "region": response.get("region", "UNKNOWN"),
             }
-        logger.warning(f"Failed to get player info for {player_id}: {get_response}")
+
+        logger.warning(
+            f"Failed to get player info for {player_id} from POST /id. Response: {response}"
+        )
         return None
 
     async def create_topup(self, player_id: str, offer_id: int) -> Optional[str]:
