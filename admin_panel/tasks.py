@@ -2,6 +2,7 @@ import logging
 from datetime import date
 
 from aiogram import Bot
+from aiogram.enums import ParseMode
 from asgiref.sync import sync_to_async
 from django.db.models import Case, Count, DecimalField, F, Sum, When
 from django.utils.timezone import now
@@ -93,17 +94,17 @@ async def send_daily_summary(bot: Bot):
     )
 
     message = (
-        f"📊 **Daily Sales Summary – {today.strftime('%Y-%m-%d')}**\n\n"
-        f"✅ **Total Orders:** {data['total_orders']}\n"
-        f"💰 **Total Revenue:** ${data['total_profit']:.2f}\n"
-        f"💰 **Total Turnover:** ${data['total_turnover']:.2f}\n\n"
-        f"**Top-Selling Products:**\n"
+        f"📊 *Daily Sales Summary – {today.strftime('%Y-%m-%d')}*\n\n"
+        f"✅ *Total Orders:* {data['total_orders']}\n"
+        f"💰 *Total Revenue:* ${data['total_profit']:.2f}\n"
+        f"💰 *Total Turnover:* ${data['total_turnover']:.2f}\n\n"
+        f"*Top-Selling Products:*\n"
         f"{top_selling_text}"
     )
 
     try:
         await bot.send_message(
-            chat_id=report_chat_id, text=message, parse_mode="Markdown"
+            chat_id=report_chat_id, text=message, parse_mode=ParseMode.MARKDOWN
         )
         logger.info(f"Daily summary sent to group {report_chat_id}")
     except Exception as e:
