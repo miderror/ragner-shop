@@ -9,6 +9,8 @@ from backend.config import BUTT_CONFIG, FEATURES_CONFIG
 from items.models import (
     DiamondItem,
     Folder,
+    FreeFireItem,
+    FreeFireRegionPrice,
     GiftcardItem,
     HomeVoteItem,
     Item,
@@ -16,10 +18,20 @@ from items.models import (
     OffersItem,
     PopularityItem,
     PUBGUCItem,
+    Region,
     StarItem,
 )
 
-from .callbacks import ApiCD, FolderCD, HistoryCD, ItemCD, MenuCD, OrderCD, ProfileCD
+from .callbacks import (
+    ApiCD,
+    FolderCD,
+    FreeFireCD,
+    HistoryCD,
+    ItemCD,
+    MenuCD,
+    OrderCD,
+    ProfileCD,
+)
 
 
 async def get_menu_inline():
@@ -44,6 +56,10 @@ async def get_menu_inline():
     if await OffersItem.ahave_active_items():
         markup.button(
             text="Offers", callback_data=MenuCD(category=MenuCD.Category.offers)
+        )
+    if await FreeFireItem.ahave_active_items():
+        markup.button(
+            text="Free Fire", callback_data=MenuCD(category=MenuCD.Category.free_fire)
         )
 
     manual_categories = await sync_to_async(list)(
@@ -125,7 +141,9 @@ async def get_profile_inline():
     markup.button(
         text="HISTORY", callback_data=ProfileCD(category=ProfileCD.Category.HISOTORY)
     )
-    if await sync_to_async(lambda: FEATURES_CONFIG.POINTS_SYSTEM_ENABLED, thread_sensitive=True)():
+    if await sync_to_async(
+        lambda: FEATURES_CONFIG.POINTS_SYSTEM_ENABLED, thread_sensitive=True
+    )():
         markup.button(
             text="POINTS", callback_data=ProfileCD(category=ProfileCD.Category.POINTS)
         )
@@ -148,7 +166,9 @@ async def get_balance_inline():
     )
     markup.button(
         text=await sync_to_async(lambda: BUTT_CONFIG.TOPUP_RUBLE)(),
-        callback_data=ProfileCD(category=ProfileCD.Category.BALANCE, action="topup_ruble"),
+        callback_data=ProfileCD(
+            category=ProfileCD.Category.BALANCE, action="topup_ruble"
+        ),
     )
     markup.button(
         text=await sync_to_async(lambda: BUTT_CONFIG.BACK)(),
@@ -276,6 +296,72 @@ async def get_api_management_inline():
     markup.button(
         text=await sync_to_async(lambda: BUTT_CONFIG.BACK)(),
         callback_data=MenuCD(category="root"),
+    )
+    markup.adjust(1)
+    return markup.as_markup()
+
+
+async def get_free_fire_regions_keyboard():
+    markup = InlineKeyboardBuilder()
+
+    active_regions = await sync_to_async(list)(
+        Region.objects.filter(
+            freefire_prices__is_active=True, freefire_prices__item__is_active=True
+        ).distinct()
+    )
+
+    for region in active_regions:
+        markup.button(
+            text=region.display_name,
+            callback_data=FreeFireCD(action="select_region", region_id=region.id),
+        )
+
+    markup.button(
+        text=await sync_to_async(lambda: BUTT_CONFIG.BACK)(),
+        callback_data=MenuCD(category="root"),
+    )
+
+    markup.adjust(1, repeat=True)
+
+    return markup.as_markup()
+
+
+async def get_free_fire_items_keyboard(region_id: int):
+    markup = InlineKeyboardBuilder()
+    region_prices = await sync_to_async(list)(
+        FreeFireRegionPrice.objects.filter(
+            region_id=region_id, is_active=True, item__is_active=True
+        )
+        .select_related("item")
+        .order_by("item__serial_number", "item__price")
+    )
+
+    for rp in region_prices:
+        markup.button(
+            text=f"{rp.item.title} - ${rp.final_price}",
+            callback_data=FreeFireCD(
+                action="select_item", item_id=rp.item.id, region_id=region_id
+            ),
+        )
+
+    markup.button(
+        text=await sync_to_async(lambda: BUTT_CONFIG.BACK)(),
+        callback_data=MenuCD(category=MenuCD.Category.free_fire),
+    )
+    markup.adjust(1, repeat=True)
+    return markup.as_markup()
+
+
+async def get_free_fire_confirmation_keyboard(item_id: int, region_id: int):
+    markup = InlineKeyboardBuilder()
+    markup.button(
+        text="✅ Confirm",
+        callback_data=FreeFireCD(
+            action="confirm_purchase", item_id=item_id, region_id=region_id
+        ),
+    )
+    markup.button(
+        text="❌ Cancel", callback_data=FreeFireCD(action="cancel", region_id=region_id)
     )
     markup.adjust(1)
     return markup.as_markup()

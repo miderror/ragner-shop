@@ -15,6 +15,7 @@ class MenuCD(CallbackData, prefix="men"):
         stars = "stars"
         diamond = "diamond"
         api = "api"
+        free_fire = "free_fire"
 
     category: str
 
@@ -65,3 +66,9 @@ class FolderCD(CallbackData, prefix="fldr"):
 
 class ApiCD(CallbackData, prefix="api"):
     action: str
+
+
+class FreeFireCD(CallbackData, prefix="ff"):
+    action: str
+    region_id: int | None = None
+    item_id: int | None = None

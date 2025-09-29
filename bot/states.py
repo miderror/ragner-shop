@@ -11,3 +11,8 @@ class OrderState(StatesGroup):
 class TopUpState(StatesGroup):
     amount = State()
     ruble_amount = State()
+
+
+class FreeFireOrderState(StatesGroup):
+    player_id = State()
+    confirmation = State()

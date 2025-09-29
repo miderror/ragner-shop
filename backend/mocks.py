@@ -55,3 +55,14 @@ def patch_all():
         logger.info("[MOCK] payments.payment (Binance, ByBit) успешно подменены.")
     except Exception as e:
         logger.error(f"[MOCK] Не удалось подменить проверку кошельков: {e}")
+
+    try:
+        from integrations import shop2topup
+        from integrations.mocks import mock_shop2topup_api
+
+        shop2topup.shop2topup_api = mock_shop2topup_api
+        logger.info(
+            "[MOCK] integrations.shop2topup.shop2topup_api successfully patched."
+        )
+    except Exception as e:
+        logger.error(f"[MOCK] Failed to patch shop2topup_api: {e}")

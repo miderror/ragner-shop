@@ -38,6 +38,16 @@ class Order(models.Model):
     pubg_id = models.CharField(
         blank=True, null=True, max_length=50, verbose_name="PUBG id"
     )
+    player_name = models.CharField(
+        max_length=100, blank=True, null=True, verbose_name="Player Name"
+    )
+    provider_transaction_id = models.CharField(
+        max_length=255,
+        blank=True,
+        null=True,
+        unique=True,
+        verbose_name="Provider Transaction ID",
+    )
     is_completed = models.BooleanField(
         blank=True, null=True, verbose_name="Completed/Failed"
     )
@@ -94,21 +104,27 @@ class Order(models.Model):
             self.__class__.Status.FAILED: "failed ❌",
         }.get(self.status, "unknown")
         completed = f"Order {status}\n"
+
+        player_id_label = "PUBG ID"
         if self.item.category == Item.Category.STARS:
-            pubg_id = f"USERNAME: {self.pubg_id}\n" if self.pubg_id else ""
+            player_id_label = "USERNAME"
         elif self.item.category == Item.Category.DIAMOND:
-            pubg_id = f"USERID: {self.pubg_id}\n" if self.pubg_id else ""
-        else:
-            pubg_id = f"PUBG ID: {self.pubg_id}\n" if self.pubg_id else ""
+            player_id_label = "USERID"
+        elif self.item.category == Item.Category.FREE_FIRE:
+            player_id_label = "Player ID"
+
+        player_id_str = f"{player_id_label}: {self.pubg_id}\n" if self.pubg_id else ""
+
         codes = (
             f"Code USED: {' '.join([code.code for code in self.uc_codes.all()])}\n"
             if self.uc_codes.all()
             else ""
         )
+
         return (
             f"{completed}"
             f"{self.title}\n"
-            f"{pubg_id}"
+            f"{player_id_str}"
             f"Balance before order: {self.balance_before}$\n"
             f"Order Cost: {self.price}$\n"
             f"Balance after Order: {self.balance_before - self.price.quantize(Decimal('0.01'))}$\n"
@@ -124,16 +140,21 @@ class Order(models.Model):
             if self.uc_codes.all()
             else ""
         )
+
+        player_id_label = "PUBG ID"
         if self.item.category == Item.Category.STARS:
-            pubg_id = f"USERNAME: {self.pubg_id}\n" if self.pubg_id else ""
+            player_id_label = "USERNAME"
         elif self.item.category == Item.Category.DIAMOND:
-            pubg_id = f"USERID: {self.pubg_id}\n" if self.pubg_id else ""
-        else:
-            pubg_id = f"PUBG ID: {self.pubg_id}\n" if self.pubg_id else ""
+            player_id_label = "USERID"
+        elif self.item.category == Item.Category.FREE_FIRE:
+            player_id_label = "Player ID"
+
+        player_id_str = f"{player_id_label}: {self.pubg_id}\n" if self.pubg_id else ""
+
         return (
             f"userid: {self.tg_user.tg_id}\n"
             f"Order: {self.title}\n"
-            f"{pubg_id}"
+            f"{player_id_str}"
             f"Balance before order: {self.balance_before}$\n"
             f"Order Cost: {self.price}$\n"
             f"Balance after Order: {self.balance_before - self.price.quantize(Decimal('0.01'))}$\n"
@@ -305,10 +326,9 @@ class Order(models.Model):
 
 
 class TopUp(models.Model):
-
     class Currency(models.TextChoices):
-        USDT = 'USDT', 'USDT'
-        RUB = 'RUB', 'RUB'
+        USDT = "USDT", "USDT"
+        RUB = "RUB", "RUB"
 
     tg_user = models.ForeignKey(
         TgUser, on_delete=models.CASCADE, verbose_name="TG USER"
@@ -328,8 +348,10 @@ class TopUp(models.Model):
     created_at = models.DateTimeField(auto_now_add=True, verbose_name="Creation date")
     updated_at = models.DateTimeField(auto_now=True, verbose_name="Updation date")
     paid_at = models.DateTimeField(blank=True, null=True, verbose_name="Paid at")
-    payment_url = models.URLField(blank=True, null=True, verbose_name='Payment URL')
-    currency = models.CharField(max_length=10, choices=Currency, default=Currency.USDT, verbose_name='Currency')
+    payment_url = models.URLField(blank=True, null=True, verbose_name="Payment URL")
+    currency = models.CharField(
+        max_length=10, choices=Currency, default=Currency.USDT, verbose_name="Currency"
+    )
 
     class Meta:
         verbose_name = "TopUp"
@@ -357,8 +379,9 @@ class TopUp(models.Model):
     def convert_to_ustd(self) -> Decimal | None:
         if self.currency == self.Currency.RUB:
             return (
-                Decimal(str(self.amount)) / Decimal(str(PAYMENT_CONFIG.RUB_USDT_EXCHANGE_RATE))
-            ).quantize(Decimal('0.01'))
+                Decimal(str(self.amount))
+                / Decimal(str(PAYMENT_CONFIG.RUB_USDT_EXCHANGE_RATE))
+            ).quantize(Decimal("0.01"))
         if self.currency == self.Currency.USDT:
             return self.amount
         return None

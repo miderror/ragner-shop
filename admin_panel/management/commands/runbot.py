@@ -13,7 +13,7 @@ from django.core.management import BaseCommand
 from admin_panel.tasks import send_daily_summary
 from backend.tasks import start_background_tasks
 from bot.commands import set_commands
-from bot.handlers import admin_router, profile_router, shop_router, start_router
+from bot.handlers import admin_router, profile_router, shop_router, start_router, freefire_router
 from bot.misc.logging import configure_logger
 from bot.misc.mailing import start_mailing
 from orders.utils import delete_old_topups
@@ -43,6 +43,7 @@ async def main():
         admin_router,
         profile_router,
         shop_router,
+        freefire_router,
     )
 
     jobstores = {

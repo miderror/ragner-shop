@@ -29,12 +29,19 @@ def order_pre_save(sender, instance: Order, **kwargs):
             )
             text = instance.admin_str()
             instance.send_manager_notification(text)
+        
         if instance.is_completed is False:
             text = f"{instance.admin_str()}\nis failed"
             logger.info(text)
             instance.send_manager_notification(text)
+
             error_message = "ERROR🤬 Try redeeming the code mentioned in the last line"
+
+            if instance.category == Item.Category.FREE_FIRE:
+                error_message = "❌ Unfortunately, there was an error with your order. The funds have been returned to your balance."
+            
             text = f"{error_message}\n\n{instance.user_str()}"
+            
             send_notification_task.delay(
                 chat_id=instance.tg_user.tg_id,
                 text=text,

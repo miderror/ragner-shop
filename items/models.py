@@ -9,6 +9,35 @@ from backend.constants import CODES_MAP, DEFAULT_UC_AMOUNTS, UC_RECIPES
 from codes.models import Activator, StockbleCode, UcCode
 
 
+class Region(models.Model):
+    name = models.CharField(
+        max_length=50,
+        unique=True,
+        verbose_name="API Region Name",
+        help_text="The exact region name from the API (e.g., RU, CIS, EUROPE).",
+    )
+    display_name = models.CharField(
+        max_length=100,
+        verbose_name="Display Name in Bot",
+        help_text="The name that users will see in the bot (e.g., Russia 🇷🇺, Europe 🇪🇺).",
+        default="",
+    )
+    description = models.TextField(
+        blank=True,
+        null=True,
+        verbose_name="Region Description",
+        help_text="This text will be shown in the bot after selecting this region.",
+    )
+
+    class Meta:
+        verbose_name = "Region"
+        verbose_name_plural = "Regions"
+        ordering = ["display_name"]
+
+    def __str__(self):
+        return self.display_name or self.name
+
+
 class ManualCategory(models.Model):
     name = models.CharField(max_length=50, verbose_name="Button Name")
     prompt_text = models.CharField(
@@ -44,6 +73,7 @@ class Item(models.Model):
         STARS = "stars", "Telegram Stars"
         DIAMOND = "diamond", "Mobilelegends diamond"
         MORE_PUBG = "more_pubg", "More PUBG Services"
+        FREE_FIRE = "free_fire", "Free Fire"
 
     title = models.CharField(
         blank=True,
@@ -103,6 +133,13 @@ class Item(models.Model):
         on_delete=models.SET_NULL,
         related_name="items",
         verbose_name="Folder",
+    )
+    provider_item_id = models.IntegerField(
+        unique=True,
+        null=True,
+        blank=True,
+        verbose_name="Provider Item ID",
+        help_text="The unique ID of the item from the external provider (e.g., Shop2TopUp).",
     )
     serial_number = models.PositiveIntegerField(
         default=100,
@@ -407,7 +444,7 @@ class Folder(models.Model):
     description = models.TextField(
         blank=True,
         verbose_name="Custom Description",
-        help_text="Optional. If set, this will be shown inside this folder in the bot."
+        help_text="Optional. If set, this will be shown inside this folder in the bot.",
     )
 
     def aitems(self, **kwargs):
@@ -454,3 +491,69 @@ class MorePubgItem(Item):
     def save(self, *args, **kwargs):
         self.category = Item.Category.POPULARITY
         super().save(*args, **kwargs)
+
+
+class FreeFireItem(Item):
+    class Meta:
+        proxy = True
+        verbose_name = "Free Fire Item"
+        verbose_name_plural = "Free Fire Items"
+
+    def save(self, *args, **kwargs):
+        self.category = Item.Category.FREE_FIRE
+        super().save(*args, **kwargs)
+
+    @classmethod
+    def items(cls, **kwargs):
+        return super().items(category=cls.Category.FREE_FIRE, **kwargs)
+
+
+class FreeFireRegionPrice(models.Model):
+    item = models.ForeignKey(
+        Item,
+        on_delete=models.CASCADE,
+        related_name="freefire_prices",
+        verbose_name="Free Fire Item",
+        limit_choices_to={"category": Item.Category.FREE_FIRE},
+    )
+    region = models.ForeignKey(
+        Region,
+        on_delete=models.CASCADE,
+        related_name="freefire_prices",
+        verbose_name="Region",
+    )
+    markup = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0.00,
+        verbose_name="Markup ($)",
+        help_text="The amount to add to the base provider price.",
+    )
+    final_price = models.DecimalField(
+        max_digits=10, decimal_places=2, editable=False, verbose_name="Final Price"
+    )
+    is_active = models.BooleanField(
+        default=True,
+        verbose_name="Is Active",
+        help_text="If unchecked, this item will not be shown for this region in the bot.",
+    )
+
+    class Meta:
+        verbose_name = "Free Fire Region Price"
+        verbose_name_plural = "Free Fire Region Prices"
+        unique_together = ("item", "region")
+        ordering = ["region__name"]
+
+    def __str__(self):
+        return f"{self.item.title} in {self.region.name} for ${self.final_price}"
+
+    def save(self, *args, **kwargs):
+        self.final_price = self.item.price + self.markup
+        super().save(*args, **kwargs)
+
+
+class FreeFireRegion(Region):
+    class Meta:
+        proxy = True
+        verbose_name = "Free Fire Region"
+        verbose_name_plural = "Free Fire Regions"

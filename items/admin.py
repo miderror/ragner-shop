@@ -4,6 +4,9 @@ from .models import (
     CategoryDescription,
     DiamondItem,
     Folder,
+    FreeFireItem,
+    FreeFireRegion,
+    FreeFireRegionPrice,
     GiftcardItem,
     HomeVoteItem,
     Item,
@@ -300,3 +303,41 @@ class ManualItemAdmin(admin.ModelAdmin):
 
     def get_queryset(self, request):
         return super().get_queryset(request).filter(manual_category__isnull=False)
+
+
+@admin.register(FreeFireRegion)
+class RegionAdmin(admin.ModelAdmin):
+    list_display = ("display_name", "name")
+    search_fields = ("display_name", "name")
+    fieldsets = ((None, {"fields": ("display_name", "name", "description")}),)
+
+    def get_queryset(self, request):
+        return super().get_queryset(request)
+
+
+class FreeFireRegionPriceInline(admin.TabularInline):
+    model = FreeFireRegionPrice
+    extra = 1
+    fields = ("region", "markup", "final_price", "is_active")
+    readonly_fields = ("final_price",)
+
+
+@admin.register(FreeFireItem)
+class FreeFireItemAdmin(admin.ModelAdmin):
+    list_display = ("title", "provider_item_id", "price", "serial_number", "is_active")
+    list_editable = (
+        "serial_number",
+        "is_active",
+    )
+    search_fields = ("title", "provider_item_id")
+    list_filter = ("is_active",)
+    readonly_fields = ("provider_item_id", "title", "price", "category", "data")
+    exclude = ("amount", "activator", "manual_category", "folder")
+
+    inlines = [FreeFireRegionPriceInline]
+
+    def get_queryset(self, request):
+        return super().get_queryset(request).filter(category=Item.Category.FREE_FIRE)
+
+    def has_add_permission(self, request):
+        return False
