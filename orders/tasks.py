@@ -37,8 +37,21 @@ def check_free_fire_order_status_task(self, order_id):
             shop2topup_api.get_transaction_status(order.provider_transaction_id)
         )
 
-        if not status_info:
-            raise ValueError("Failed to get status from API: empty response.")
+        if status_info and status_info.get("msg") == "NO_BALANCE":
+            logger.warning(
+                f"Shop2TopUp has NO_BALANCE for checking order {order_id}. "
+                f"The task will stop, but the order will NOT be cancelled. "
+                f"It requires manual check or balance top-up on the provider side."
+            )
+            return
+
+        if not status_info or not status_info.get("success"):
+            error_msg = (
+                status_info.get("msg", "empty response")
+                if status_info
+                else "empty response"
+            )
+            raise ValueError(f"Failed to get status from API: {error_msg}.")
 
         status = status_info.get("status")
         if status == "DONE":

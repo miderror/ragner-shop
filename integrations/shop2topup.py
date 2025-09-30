@@ -1,4 +1,3 @@
-import asyncio
 import logging
 import uuid
 from typing import Any, Dict, List, Optional
@@ -20,12 +19,35 @@ class Shop2TopUpClient:
         url = f"{self.base_url}{endpoint}"
         headers = {"Authorization": f"Bearer {self.api_key}"}
 
+        log_payload = kwargs.get("json", "No JSON payload")
+        logger.info(
+            f"Shop2TopUp Request: {method.upper()} {url} | Payload: {log_payload}"
+        )
+
         try:
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.request(method, url, **kwargs) as response:
+                    response_text = await response.text()
+                    logger.info(
+                        f"Shop2TopUp Response: Status {response.status} | Body: {response_text}"
+                    )
+
+                    if response.status == 402:
+                        try:
+                            error_data = await response.json()
+                            error_data["http_status"] = 402
+                            return error_data
+                        except aiohttp.ContentTypeError:
+                            return {
+                                "success": False,
+                                "msg": "NO_BALANCE",
+                                "http_status": 402,
+                                "error": "Invalid JSON response",
+                            }
+
                     if response.status != 200:
                         logger.error(
-                            f"Shop2TopUp API error {response.status}: {await response.text()}"
+                            f"Shop2TopUp API error {response.status}: {response_text}"
                         )
                         return {
                             "success": False,
@@ -73,7 +95,7 @@ class Shop2TopUpClient:
 
     async def get_transaction_status(self, trx_id: str) -> Optional[Dict[str, Any]]:
         response = await self._request("post", "/transaction", json={"trx_id": trx_id})
-        if response.get("success"):
+        if response and response.get("success"):
             return response
         return None
 
