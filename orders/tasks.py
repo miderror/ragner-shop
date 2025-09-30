@@ -15,7 +15,6 @@ logger = logging.getLogger(__name__)
 
 @app.task()
 def process_order_task(order_id):
-    """Фоново обрабатывает заказ."""
     order = Order.objects.select_related(
         "item",
     ).get(id=order_id)

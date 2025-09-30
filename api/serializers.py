@@ -3,7 +3,7 @@ from decimal import Decimal
 from drf_spectacular.utils import extend_schema_field
 from rest_framework import serializers
 
-from items.models import Item, PUBGUCItem
+from items.models import FreeFireRegionPrice, Item, PUBGUCItem
 from orders.models import Order, TopUp
 from users.models import TgUser
 
@@ -24,6 +24,17 @@ class ProductSerializer(serializers.ModelSerializer):
     @extend_schema_field(serializers.IntegerField(allow_null=True))
     def get_stock(self, obj: Item):
         return obj.get_stock_amount()
+
+
+class FreeFireProductSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="item.id", read_only=True)
+    title = serializers.CharField(source="item.title", read_only=True)
+    region_id = serializers.IntegerField(source="region.id", read_only=True)
+    region_name = serializers.CharField(source="region.display_name", read_only=True)
+
+    class Meta:
+        model = FreeFireRegionPrice
+        fields = ("id", "title", "region_id", "region_name", "final_price")
 
 
 class OrderSerializer(serializers.ModelSerializer):
@@ -52,6 +63,9 @@ class CreateOrderSerializer(serializers.Serializer):
         required=False,
         help_text="Required for PUBG UC, Popularity, Manual Orders, etc.",
     )
+    free_fire_id = serializers.CharField(
+        max_length=50, required=False, help_text="Required for Free Fire items."
+    )
     username = serializers.CharField(
         max_length=50, required=False, help_text="Required for Telegram Stars."
     )
@@ -59,6 +73,9 @@ class CreateOrderSerializer(serializers.Serializer):
         max_length=50,
         required=False,
         help_text="Required for Mobile Legends Diamonds (e.g., '123456(7890)').",
+    )
+    region_id = serializers.IntegerField(
+        required=False, help_text="Required for Free Fire items."
     )
 
     def validate(self, data):
@@ -98,7 +115,9 @@ class CreateOrderSerializer(serializers.Serializer):
         if manual_category:
             if not data.get("pubg_id"):
                 raise serializers.ValidationError(
-                    {"pubg_id": f"This field is required for '{item.title}'. Prompt: '{manual_category.prompt_text}'"}
+                    {
+                        "pubg_id": f"This field is required for '{item.title}'. Prompt: '{manual_category.prompt_text}'"
+                    }
                 )
 
         elif category in (
@@ -127,6 +146,27 @@ class CreateOrderSerializer(serializers.Serializer):
                     {"username": "This field is required for Telegram Stars."}
                 )
             data["pubg_id"] = data.pop("username")
+
+        elif category == Item.Category.FREE_FIRE:
+            player_id = data.get("free_fire_id")
+            region_id = data.get("region_id")
+            if not player_id:
+                raise serializers.ValidationError(
+                    {"free_fire_id": "This field is required for Free Fire items."}
+                )
+            if not region_id:
+                raise serializers.ValidationError(
+                    {"region_id": "This field is required for Free Fire items."}
+                )
+            
+            data["pubg_id"] = data.pop("free_fire_id")
+
+            if not FreeFireRegionPrice.objects.filter(
+                item_id=item.id, region_id=region_id, is_active=True
+            ).exists():
+                raise serializers.ValidationError(
+                    {"region_id": "Invalid item and region combination."}
+                )
 
         return data
 

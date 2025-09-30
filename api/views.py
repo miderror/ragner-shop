@@ -1,4 +1,5 @@
 import logging
+from decimal import Decimal
 
 from asgiref.sync import async_to_sync, sync_to_async
 from django.shortcuts import get_object_or_404
@@ -8,12 +9,14 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.viewsets import ReadOnlyModelViewSet
 
-from items.models import Item, PUBGUCItem
+from integrations.shop2topup import shop2topup_api
+from items.models import FreeFireRegionPrice, Item, PUBGUCItem
 from orders.models import Order, TopUp
 from orders.services import (
     InsufficientBalanceError,
     ItemNotActiveError,
     OutOfStockError,
+    create_free_fire_order,
     create_order_service,
 )
 
@@ -21,6 +24,7 @@ from .permissions import HasPositiveBalance
 from .serializers import (
     CreateOrderSerializer,
     CreatePaymentSerializer,
+    FreeFireProductSerializer,
     OrderSerializer,
     PaymentSerializer,
     ProductSerializer,
@@ -44,7 +48,19 @@ class ProfileView(APIView):
 class ProductViewSet(ReadOnlyModelViewSet):
     queryset = PUBGUCItem.objects.filter(is_active=True, category=Item.Category.PUBG_UC)
     serializer_class = ProductSerializer
-    permission_classes = []
+    permission_classes = [HasPositiveBalance]
+
+
+@extend_schema(
+    summary="Get Free Fire Products",
+    description="Retrieves a list of available Free Fire products with prices per region.",
+)
+class FreeFireProductViewSet(mixins.ListModelMixin, viewsets.GenericViewSet):
+    queryset = FreeFireRegionPrice.objects.filter(
+        is_active=True, item__is_active=True
+    ).select_related("item", "region")
+    serializer_class = FreeFireProductSerializer
+    permission_classes = [HasPositiveBalance]
 
 
 @extend_schema(
@@ -79,7 +95,48 @@ class OrderViewSet(
         item_id = data.pop("item_id")
         item = await sync_to_async(get_object_or_404)(Item, id=item_id)
         try:
-            order = await create_order_service(tg_user=request.user, item=item, **data)
+            order = None
+            if item.category == Item.Category.FREE_FIRE:
+                player_id = data.get("pubg_id")
+                region_id = data.get("region_id")
+
+                region_price_obj = await FreeFireRegionPrice.objects.aget(
+                    item_id=item.id, region_id=region_id
+                )
+                final_price = float(region_price_obj.final_price)
+
+                if request.user.balance < Decimal(str(final_price)):
+                    raise InsufficientBalanceError(
+                        "You do not have enough balance for this Free Fire item."
+                    )
+
+                player_info = await shop2topup_api.get_player_info(player_id)
+                if not player_info:
+                    return Response(
+                        {
+                            "success": False,
+                            "error": "Could not find a player with this ID.",
+                        },
+                        status=status.HTTP_400_BAD_REQUEST,
+                    )
+                player_name = player_info.get("player_name", "Unknown")
+
+                order = await create_free_fire_order(
+                    tg_user=request.user,
+                    item_id=item.id,
+                    region_id=region_id,
+                    player_id=player_id,
+                    player_name=player_name,
+                    price=final_price,
+                )
+                if not order:
+                    raise Exception("Failed to create order with the provider.")
+
+            else:
+                order = await create_order_service(
+                    tg_user=request.user, item=item, **data
+                )
+
             return Response(
                 {
                     "success": True,
@@ -144,3 +201,51 @@ class PaymentViewSet(
             {"success": True, **response_serializer.data},
             status=status.HTTP_201_CREATED,
         )
+
+
+@extend_schema(
+    summary="Check Free Fire Player ID",
+    description="Validates a Free Fire Player ID and returns the player's name and region.",
+    request={"application/json": {"properties": {"player_id": {"type": "string"}}}},
+    responses={
+        200: {
+            "description": "Player found",
+            "examples": {
+                "application/json": {
+                    "success": True,
+                    "player_name": "MockPlayer_123",
+                    "region": "RU",
+                }
+            },
+        },
+        400: {
+            "description": "Invalid input or player not found",
+            "examples": {
+                "application/json": {"success": False, "error": "Player not found."}
+            },
+        },
+    },
+)
+class FreeFirePlayerCheckView(APIView):
+    permission_classes = [HasPositiveBalance]
+
+    def post(self, request, *args, **kwargs):
+        return async_to_sync(self.a_post)(request, *args, **kwargs)
+    
+    async def a_post(self, request, *args, **kwargs):
+        player_id = request.data.get('player_id')
+        if not player_id:
+            return Response(
+                {"success": False, "error": "player_id is required."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        player_info = await shop2topup_api.get_player_info(str(player_id))
+
+        if not player_info:
+            return Response(
+                {"success": False, "error": "Player not found."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return Response({"success": True, **player_info})
