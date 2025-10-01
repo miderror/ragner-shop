@@ -82,6 +82,7 @@ class SmileOneAPI:
         logger.warning(f"SMILEONE_DEBUG: Params sent (without sign): {json.dumps({**base_params, **extra_params})}")
         try:
             response = requests.post(url, data=params)
+            logger.warning(f"SMILEONE_DEBUG: Response status: {response.status_code}, Response body: {response.text}")
             response.raise_for_status()
             return response.json()
         except requests.exceptions.RequestException as e:
