@@ -113,6 +113,8 @@ async def create_codeepay_payment(tg_user: TgUser, to_pay: int):
     logging.info(f'Запрос платежа {data}')
     async with aiohttp.ClientSession() as session:
         async with session.post(url=url, headers=headers, json=data) as response:
+            response_text = await response.text()
+            logger.warning(f"CODEEPAY_DEBUG: Response status: {response.status}, Response body: {response_text}")
             if response.status not in (200, 201):
                 logging.error(f'Ошибка codeepay {response.status}: {await response.text()}')
             res = await response.json()
