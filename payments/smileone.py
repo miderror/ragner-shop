@@ -77,10 +77,16 @@ class SmileOneAPI:
         }
         params = {**base_params, **extra_params}
         params['sign'] = self._generate_sign(params)
-        logger.debug(f'Request data for smileone: {params}')
-        response = requests.post(url, data=params)
-        response.raise_for_status()
-        return response.json()
+        logger.warning(f'SMILEONE_DEBUG:Request data for smileone: {params}')
+        logger.warning(f"SMILEONE_DEBUG: Requesting endpoint: {endpoint}")
+        logger.warning(f"SMILEONE_DEBUG: Params sent (without sign): {json.dumps({**base_params, **extra_params})}")
+        try:
+            response = requests.post(url, data=params)
+            response.raise_for_status()
+            return response.json()
+        except requests.exceptions.RequestException as e:
+            logger.error(f"SMILEONE_DEBUG: RequestException for endpoint {endpoint}: {e}")
+            return {"status": 500, "message": str(e), "data": {}}
 
     def get_balance(self, product: str) -> dict:
         return self._make_request("querypoints", {'product': product})
