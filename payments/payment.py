@@ -28,11 +28,12 @@ def get_binance_updates():
     timestamp = int((time()) * 1000)
     startTime = timestamp - 1000 * 60 * 60 * 24
     try:
+        logger.warning("BINANCE_DEBUG: Trying get_binance_updates")
         history = client.deposit_history(status=1, coin='USDT', startTime=startTime, timestamp=timestamp)
-        logger.debug(f'Binance response {history}')
+        logger.warning(f"BINANCE_DEBUG: Raw response from Binance API: {history}")
         return [(row['amount'], row['txId']) for row in history if row['status'] == 1]
     except Exception as e:
-        logger.error(e)
+        logger.error(f"BINANCE_DEBUG: Exception in get_binance_updates: {e}", exc_info=True)
         return []
 
 
