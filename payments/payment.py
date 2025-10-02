@@ -14,6 +14,7 @@ from asgiref.sync import sync_to_async
 CODEEPAY_API_KEY = ENV.str('CODEEPAY_API_KEY')
 BASE_IP = ENV.str('BASE_IP')
 BOT_URL = ENV.str('BOT_URL')
+SHOP_NAME = ENV.str('SHOP_NAME')
 
 MIN_PRICE = 100
 
@@ -103,7 +104,7 @@ async def create_codeepay_payment(tg_user: TgUser, to_pay: int):
         'method_slug': 'sbp',
         'amount': topup.to_pay,
         'description': f'Оплата {topup} {tg_user}',
-        'shop_name': 'string',
+        'shop_name': SHOP_NAME,
         'shop_url': BOT_URL,
         'metadata': {
             'order_id': topup.id,
