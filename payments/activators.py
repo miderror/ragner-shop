@@ -81,7 +81,7 @@ async def aactivate_code(player_id: int, uc_code: str, uc_value: str | int):
 async def aactivate_code_kokos(player_id: int, uc_code: str, uc_value: str | None = None):
     url = f'{KOKOS_URL}/redeem'
     data = {
-        'requireReceipt': False,
+        'requireReceipt': True,
         'playerId': str(player_id),
         'codeOverride': uc_code
     }
