@@ -35,11 +35,13 @@ def patch_all():
             mock_fars_activate,
             mock_kokos_activate,
             mock_ucodeium_activate,
+            # mock_midasbuy_activate,
         )
 
         activators.aactivate_code = mock_ucodeium_activate
         activators.aactivate_code_kokos = mock_kokos_activate
         activators.aactivate_code_fars = mock_fars_activate
+        # activators.aactivate_code_midasbuy = mock_midasbuy_activate
         logger.info(
             "[MOCK] payments.activators (UCodeium, Kokos, FARS) успешно подменены."
         )

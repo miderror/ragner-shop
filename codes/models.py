@@ -8,6 +8,7 @@ class Activator(models.TextChoices):
     FARS = "fars", "FARS"
     SMILEONE = "smileone", "SmileOne"
     UCODEIUM = "ucodeium", "UCodeium"
+    MIDASBUY = "midasbuy", "Midasbuy"
 
 
 class ActivatorPriority(models.Model):

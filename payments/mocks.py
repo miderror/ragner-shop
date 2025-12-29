@@ -93,6 +93,24 @@ async def mock_fars_activate(
     return True, "0"
 
 
+async def mock_midasbuy_activate(
+    player_id: int, uc_code: str, uc_value: str | int | None = None
+):
+    """Мок для активатора Midasbuy."""
+    logger.warning(f"[MOCK] MIDASBUY: Попытка активации кода {uc_code} для {player_id}")
+    await asyncio.sleep(1)
+
+    if "FAIL" in uc_code.upper():
+        logger.error(f"[MOCK] MIDASBUY: Симуляция ошибки для кода {uc_code}")
+        return False, "Invalid request data"
+
+    if "401" in uc_code:
+        return False, "Api key required"
+
+    logger.info(f"[MOCK] MIDASBUY: Код {uc_code} успешно 'активирован'")
+    return True, "0"
+
+
 def mock_get_binance_updates():
     """Мок для получения депозитов с Binance."""
     logger.warning("[MOCK] BINANCE: Проверка 'депозитов'")

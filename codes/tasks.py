@@ -12,6 +12,7 @@ from payments.activators import (
     aactivate_code,
     aactivate_code_fars,
     aactivate_code_kokos,
+    aactivate_code_midasbuy,
 )
 
 from .models import Activator, ActivatorPriority, UcCode
@@ -64,6 +65,7 @@ async def activate_code(code: UcCode, pubg_id: str):
         Activator.UCODEIUM: aactivate_code,
         Activator.KOKOS: aactivate_code_kokos,
         Activator.FARS: aactivate_code_fars,
+        Activator.MIDASBUY: aactivate_code_midasbuy,
     }
 
     priorities = await sync_to_async(list)(
