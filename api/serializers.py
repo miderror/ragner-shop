@@ -39,7 +39,7 @@ class FreeFireProductSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     item_title = serializers.CharField(source="item.title", read_only=True)
-    status = serializers.CharField(source="status", read_only=True)
+    status = serializers.SerializerMethodField()
 
     class Meta:
         model = Order
@@ -52,6 +52,10 @@ class OrderSerializer(serializers.ModelSerializer):
             "pubg_id",
             "created_at",
         )
+
+    @extend_schema_field(serializers.CharField())
+    def get_status(self, obj):
+        return obj.status
 
 
 class CreateOrderSerializer(serializers.Serializer):
@@ -158,7 +162,7 @@ class CreateOrderSerializer(serializers.Serializer):
                 raise serializers.ValidationError(
                     {"region_id": "This field is required for Free Fire items."}
                 )
-            
+
             data["pubg_id"] = data.pop("free_fire_id")
 
             if not FreeFireRegionPrice.objects.filter(
