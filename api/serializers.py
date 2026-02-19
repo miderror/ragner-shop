@@ -39,7 +39,7 @@ class FreeFireProductSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     item_title = serializers.CharField(source="item.title", read_only=True)
-    status = serializers.CharField(source="get_status_display", read_only=True)
+    status = serializers.CharField(source="status", read_only=True)
 
     class Meta:
         model = Order
